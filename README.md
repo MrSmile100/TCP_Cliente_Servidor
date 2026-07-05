@@ -1,119 +1,154 @@
-# TCP_Cliente_Servidor# Comunicação TCP Cliente-Servidor
+# Comunicacao TCP Cliente-Servidor
 
-## Descrição
+Projeto pratico do Grupo 5 para demonstrar uma comunicacao TCP cliente-servidor usando sockets em Python.
 
-Este projeto implementa uma comunicação básica cliente-servidor utilizando o protocolo TCP em Python. O objetivo é demonstrar, de forma prática, conceitos fundamentais de redes de computadores, como estabelecimento de conexão, transmissão confiável de dados e controle de fluxo.
+O sistema tem:
 
-O sistema consiste em um servidor TCP que aguarda conexões e um cliente TCP que se conecta ao servidor para enviar mensagens e receber respostas.
+- um servidor TCP que escuta conexoes em `127.0.0.1:5000`;
+- um cliente TCP que se conecta ao servidor;
+- envio de mensagens de texto;
+- envio opcional de arquivo;
+- respostas de confirmacao do servidor;
+- roteiro para inspecionar o trafego no Wireshark.
 
----
+## Tecnologias
 
-## Tecnologias Utilizadas
+- Python 3
+- Biblioteca padrao `socket`
+- Wireshark para captura/analise de trafego
 
-* Python 3
-* Biblioteca padrão `socket`
-* Wireshark (para análise de tráfego)
+Nao e necessario instalar bibliotecas externas.
 
----
+## Estrutura
 
-## Como Executar
-
-### 1. Pré-requisitos
-
-* Python 3 instalado
-
-### 2. Executando o servidor
-
-```bash
-python server.py
+```text
+.
+|-- src/
+|   |-- client.py
+|   `-- server.py
+|-- docs/
+|   `-- DOCUMENTO_TRABALHO.md
+|-- exemplos/
+|   `-- exemplo.txt
+|-- evidencias/
+|   `-- README.md
+|-- README.md
+`-- .gitignore
 ```
 
-### 3. Executando o cliente
+## Como executar
+
+Abra dois terminais na pasta do projeto.
+
+### 1. Iniciar o servidor
+
+```bash
+python src/server.py
+```
+
+Saida esperada:
+
+```text
+[SERVIDOR] Aguardando conexoes em 127.0.0.1:5000
+[SERVIDOR] Pressione Ctrl+C para parar.
+```
+
+### 2. Executar o cliente
 
 Em outro terminal:
 
 ```bash
-python client.py
+python src/client.py
 ```
 
----
+Saida esperada no cliente:
 
-## Demonstração
-
-O cliente estabelece uma conexão com o servidor e envia uma mensagem. O servidor recebe a mensagem e responde com uma confirmação.
-
----
-
-## Análise de Tráfego (Wireshark)
-
-Para analisar a comunicação TCP:
-
-### Filtro utilizado:
-
+```text
+[CLIENTE] Conectando em 127.0.0.1:5000
+[CLIENTE] Servidor: Bem-vindo ao servidor TCP. Use MSG, FILE ou QUIT.
+[CLIENTE] Resposta: ACK MSG 18 bytes recebidos
+[CLIENTE] Resposta: ACK QUIT conexao encerrada
 ```
+
+### 3. Enviar uma mensagem personalizada
+
+```bash
+python src/client.py --message "Teste de comunicacao TCP"
+```
+
+### 4. Enviar um arquivo
+
+Crie um arquivo de teste:
+
+```bash
+echo "arquivo de teste via TCP" > exemplos/exemplo.txt
+```
+
+Execute o cliente com a opcao `--file`:
+
+```bash
+python src/client.py --message "Vou enviar um arquivo" --file exemplos/exemplo.txt
+```
+
+O servidor salva o arquivo recebido na pasta `recebidos/`.
+
+## Analise de trafego
+
+### Wireshark
+
+1. Abra o Wireshark.
+2. Inicie a captura na interface de loopback.
+   - No Windows, normalmente aparece como `Adapter for loopback traffic capture`.
+   - Em algumas instalacoes pode aparecer como `Npcap Loopback Adapter`.
+3. Use o filtro:
+
+```text
 tcp.port == 5000
 ```
 
-### O que observar:
+4. Inicie o servidor com `python src/server.py`.
+5. Execute o cliente com `python src/client.py`.
+6. Observe os pacotes capturados.
 
-* **Handshake TCP (3-way handshake):**
+### O que observar
 
-  * SYN
-  * SYN-ACK
-  * ACK
+- Estabelecimento da conexao:
+  - `SYN`
+  - `SYN, ACK`
+  - `ACK`
+- Envio dos dados:
+  - segmentos TCP com payload contendo `MSG`, `FILE` ou `QUIT`;
+  - numeros de sequencia (`Seq`);
+  - confirmacoes (`Ack`).
+- Encerramento:
+  - pacotes `FIN` e `ACK`, quando a conexao e finalizada.
 
-* **Transmissão de dados:**
+## Conceitos demonstrados
 
-  * Pacotes com payload
-  * Números de sequência (SEQ)
-  * Confirmações (ACK)
+- **Cliente-servidor:** o servidor espera conexoes e o cliente inicia a comunicacao.
+- **Socket TCP:** interface usada pelo programa para enviar e receber dados pela rede.
+- **Conexao:** antes dos dados, o TCP estabelece uma conexao com handshake de tres vias.
+- **Fluxo de bytes:** TCP envia bytes em sequencia; por isso o programa define comandos terminados por `\n`.
+- **Confiabilidade:** o protocolo usa confirmacoes, numeros de sequencia e retransmissoes quando necessario.
+- **Ordem:** os bytes chegam ao programa na mesma ordem em que foram enviados.
+- **Porta:** o servidor usa a porta `5000`, permitindo que o sistema operacional entregue os dados ao processo correto.
 
-* **Encerramento da conexão:**
+## Limitacoes
 
-  * FIN
-  * ACK
+- O experimento roda em `localhost`, sem trafego em uma rede real.
+- O servidor atende um cliente por vez.
+- Nao ha criptografia, autenticacao ou TLS.
+- O protocolo da aplicacao e simples e criado apenas para fins didaticos.
+- Nao ha comparacao de desempenho com UDP.
+- Arquivos grandes nao foram o foco do teste.
 
----
+## Roteiro rapido para apresentacao
 
-## Conceitos Envolvidos
-
-* **TCP (Transmission Control Protocol):**
-  Protocolo orientado à conexão que garante entrega confiável e ordenada de dados.
-
-* **Conexão:**
-  Estabelecida através do handshake de três vias.
-
-* **Fluxo de bytes:**
-  Os dados são transmitidos como um fluxo contínuo, sem delimitação de mensagens.
-
-* **Confiabilidade:**
-  Garantida por mecanismos de retransmissão e confirmação (ACK).
-
-* **Ordem:**
-  Mantida através de números de sequência (SEQ).
-
-* **Sockets:**
-  Interface de programação utilizada para comunicação entre cliente e servidor.
-
----
-
-## Limitações
-
-* Execução em ambiente local (localhost)
-* Suporte a apenas um cliente por vez
-* Não há criptografia (sem TLS)
-* Não há tratamento robusto de erros
-* Não há controle explícito de congestionamento
-* Comunicação simples (texto)
-
----
-
-## Estrutura do Projeto
-
-```
-.
-├── server.py
-├── client.py
-└── README.md
-```
-
+1. Mostrar o codigo do servidor em `src/server.py` e explicar `bind`, `listen` e `accept`.
+2. Mostrar o codigo do cliente em `src/client.py` e explicar `connect` e `sendall`.
+3. Executar `python src/server.py`.
+4. Executar `python src/client.py`.
+5. Mostrar a resposta `ACK` no cliente e os logs no servidor.
+6. Repetir enviando um arquivo com `--file`.
+7. Abrir o Wireshark com filtro `tcp.port == 5000`.
+8. Apontar o handshake, os pacotes com dados e o encerramento da conexao.
